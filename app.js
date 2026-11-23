@@ -171,7 +171,7 @@ async function extract(url, log) {
   const errs = [];
   for (const eng of ENGINES) {
     if (eng.match && !eng.match.test(url)) continue;
-    const st = log(`Resolviendo con ${eng.name}…`);
+    const st = log("Resolviendo el enlace…");
     try {
       const data = await eng.extract(url);
       if (!data || !Array.isArray(data.formats) || !data.formats.length) {
@@ -188,6 +188,50 @@ async function extract(url, log) {
     }
   }
   return { ok: false, errs };
+}
+
+/* descarga el archivo a un blob (con progreso real) para que el
+   guardado sea automático y el nombre de archivo respetado */
+async function fetchBlob(url, onProgress) {
+  const r = await fetch(url);
+  if (!r.ok || !r.body) throw new Error("descarga http " + r.status);
+  const total = +r.headers.get("content-length") || 0;
+  const reader = r.body.getReader();
+  const chunks = [];
+  let got = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    got += value.length;
+    onProgress(total ? got / total : 0, got);
+  }
+  return new Blob(chunks, { type: r.headers.get("content-type") || "application/octet-stream" });
+}
+
+async function deliver(pick, fname) {
+  const s3 = step("Descargando archivo…");
+  const pbar = document.createElement("div");
+  pbar.className = "pbar";
+  pbar.innerHTML = "<i></i>";
+  $("status").appendChild(pbar);
+  try {
+    const blob = await fetchBlob(pick.url, (p) => {
+      if (p > 0) {
+        pbar.firstElementChild.style.width = Math.round(p * 100) + "%";
+        s3.lastElementChild.textContent = `Descargando archivo… ${Math.round(p * 100)}%`;
+      }
+    });
+    setStep(s3, "Archivo descargado", "done");
+    pbar.remove();
+    const obj = URL.createObjectURL(blob);
+    showResult(obj, fname);
+    setTimeout(() => URL.revokeObjectURL(obj), 60000);
+  } catch (e) {
+    setStep(s3, "Descarga directa — usa el botón", "done");
+    pbar.remove();
+    showResult(pick.url, fname);
+  }
 }
 
 /* elige el mejor formato según el modo y la calidad elegida */
@@ -245,7 +289,7 @@ async function run() {
         if (pick) {
           setStep(s2, `Lista: ${t.title}`, "done");
           const fn = brandName(t.title, pick.ext || "mp3");
-          showResult(pick.url, fn);
+          await deliver(pick, fn);
           pushHistory(url, fn);
         } else {
           setStep(s2, `Falló: ${t.title}`, "err");
@@ -267,7 +311,7 @@ async function run() {
       return;
     }
     const fname = brandName(res.data.title, pick.ext || (pick.type === "audio" ? "mp3" : "mp4"));
-    showResult(pick.url, fname);
+    await deliver(pick, fname);
     pushHistory(url, fname);
   } catch (e) {
     step("Error: " + e.message, "err");

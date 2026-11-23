@@ -24,21 +24,57 @@ const sessions = {};   // host -> { jwt, expMs }
 let turnstileApi = null;
 let busy = false;
 
+/* estado de selección */
+const state = { mode: "auto", vquality: "max", abitrate: "128" };
+
+/* ---------- detección de servicio ---------- */
+
+const SERVICES = [
+  [/youtube\.com|youtu\.be|music\.youtube/i, "YouTube"],
+  [/open\.spotify\.com|spotify\.link/i, "Spotify"],
+  [/tiktok\.com/i, "TikTok"],
+  [/instagram\.com/i, "Instagram"],
+  [/twitter\.com|x\.com/i, "X / Twitter"],
+  [/twitch\.tv/i, "Twitch"],
+  [/soundcloud\.com/i, "SoundCloud"],
+  [/reddit\.com/i, "Reddit"],
+  [/vimeo\.com/i, "Vimeo"],
+  [/facebook\.com|fb\.watch/i, "Facebook"],
+  [/pinterest\./i, "Pinterest"],
+  [/bilibili\./i, "Bilibili"],
+  [/dailymotion\./i, "Dailymotion"],
+  [/snapchat\./i, "Snapchat"],
+  [/bsky\.app|bluesky/i, "Bluesky"],
+  [/tumblr\./i, "Tumblr"],
+  [/streamable\./i, "Streamable"],
+  [/ok\.ru|odnoklassniki/i, "OK.ru"],
+  [/vk\.com|vkvideo/i, "VK"],
+  [/loom\.com/i, "Loom"],
+];
+
+function detectService(url) {
+  const det = $("detected");
+  if (!url) { det.classList.add("hidden"); return; }
+  const hit = SERVICES.find(([re]) => re.test(url));
+  det.classList.remove("hidden");
+  det.textContent = hit ? `detectado: ${hit[1]}` : "servicio no reconocido — probaré igualmente";
+  det.style.color = hit ? "" : "var(--err)";
+}
+
 /* ---------- UI helpers ---------- */
 
 function showStatus() { $("status").classList.remove("hidden"); $("status").innerHTML = ""; }
-function step(text, state) {
+function step(text) {
   const div = document.createElement("div");
-  div.className = "step" + (state ? " " + state : "");
-  div.innerHTML = (state ? "" : '<span class="spin"></span>') + "<span></span>";
+  div.className = "step";
+  div.innerHTML = '<span class="spin"></span><span></span>';
   div.querySelector("span:last-child").textContent = text;
   $("status").appendChild(div);
   return div;
 }
 function setStep(el, text, state) {
   el.className = "step " + state;
-  el.innerHTML = "<span></span>";
-  el.querySelector("span").textContent = text;
+  el.textContent = text;
 }
 function clearResult() { $("result").classList.add("hidden"); $("picker").classList.add("hidden"); }
 
@@ -52,13 +88,13 @@ function showResult(url, filename) {
   const a = document.createElement("a");
   a.className = "dl";
   a.href = url;
-  a.textContent = "⬇ guardar archivo";
+  a.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg> guardar archivo';
   a.setAttribute("download", filename || "");
   a.target = "_blank";
   a.rel = "noopener";
   const note = document.createElement("div");
   note.className = "note";
-  note.textContent = "si no empieza solo, mantén pulsado el botón → \"guardar enlace\"";
+  note.textContent = "si no empieza solo, mantén pulsado el botón → «guardar enlace»";
   r.append(f, a, note);
   a.click();
 }
@@ -66,7 +102,7 @@ function showResult(url, filename) {
 function showPicker(items) {
   const p = $("picker");
   p.classList.remove("hidden");
-  p.innerHTML = "<h3>varios elementos — elige cuál descargar:</h3>";
+  p.innerHTML = "<h3>varios elementos en el enlace — elige cuál bajar:</h3>";
   items.forEach((it, i) => {
     const row = document.createElement("div");
     row.className = "item";
@@ -74,12 +110,12 @@ function showPicker(items) {
     n.className = "n";
     n.textContent = i + 1;
     const t = document.createElement("span");
-    t.textContent = it.type === "photo" ? "imagen" : "vídeo/audio";
+    t.textContent = it.type === "photo" ? "imagen" : "vídeo / audio";
     const a = document.createElement("a");
     a.href = it.url;
     a.target = "_blank";
     a.rel = "noopener";
-    a.textContent = "descargar";
+    a.textContent = "descargar ↗";
     row.append(n, t, a);
     p.appendChild(row);
   });
@@ -103,7 +139,7 @@ function renderHistory() {
   ul.innerHTML = "";
   h.forEach((x) => {
     const li = document.createElement("li");
-    li.textContent = (x.filename || x.url);
+    li.textContent = x.filename || x.url;
     ul.appendChild(li);
   });
 }
@@ -131,7 +167,6 @@ function solveTurnstile(sitekey) {
         sitekey,
         callback: (token) => { clearTimeout(timer); res(token); },
         "error-callback": () => { clearTimeout(timer); rej(new Error("turnstile falló")); },
-        "expired-callback": () => {},
         size: "compact",
       });
     } catch (e) { clearTimeout(timer); rej(e); }
@@ -182,12 +217,12 @@ async function cobaltDownload(payload, log) {
       st = log(`conectando con ${host.split(".")[0]}…`);
       const info = await getInfo(host);
       const jwt = await getJwt(host, info);
-      setStep(st, `instancia ${host.split(".")[0]} lista`, "done");
+      setStep(st, `instancia ${host.split(".")[0]} ok`, "done");
 
       st = log("pidiendo el archivo…");
       const resp = await cobaltRequest(host, jwt, payload);
       if (resp.status === "tunnel" || resp.status === "redirect") {
-        setStep(st, "enlace generado", "done");
+        setStep(st, "enlace listo", "done");
         return { ok: true, url: resp.url, filename: resp.filename, host };
       }
       if (resp.status === "picker") {
@@ -195,7 +230,7 @@ async function cobaltDownload(payload, log) {
         return { ok: true, picker: resp.picker || [], host };
       }
       const code = resp.error?.code || "desconocido";
-      setStep(st, `esta instancia dijo: ${code}`, "err");
+      setStep(st, `dijo: ${code}`, "err");
       errs.push(`${host}: ${code}`);
       if (code.includes("jwt") || code.includes("auth")) delete sessions[host];
     } catch (e) {
@@ -230,10 +265,10 @@ async function run() {
   try {
     const isSpotify = /open\.spotify\.com|spotify\.link/.test(url);
     const base = {
-      downloadMode: $("mode").value,
-      videoQuality: $("vquality").value,
+      downloadMode: state.mode,
+      videoQuality: state.vquality,
       audioFormat: "mp3",
-      audioBitrate: $("abitrate").value,
+      audioBitrate: state.abitrate,
       filenameStyle: "basic",
       disableMetadata: false,
     };
@@ -253,8 +288,7 @@ async function run() {
         } else {
           setStep(s2, `falló: ${t.title}`, "err");
         }
-        done++;
-        if (done >= 10) { step("límite de 10 pistas por tanda", "err"); break; }
+        if (++done >= 10) { step("límite de 10 pistas por tanda", "err"); break; }
       }
       return;
     }
@@ -267,7 +301,7 @@ async function run() {
       showPicker(res.picker);
       pushHistory(url, "varios elementos");
     } else {
-      step("ninguna instancia pudo con este enlace ahora mismo. prueba otra vez en un rato o con otro link.", "err");
+      step("ninguna instancia pudo con este enlace ahora mismo — prueba en un rato u otro link", "err");
       console.warn(res.errs);
     }
   } catch (e) {
@@ -282,14 +316,42 @@ async function run() {
 
 $("go").addEventListener("click", run);
 $("url").addEventListener("keydown", (e) => { if (e.key === "Enter") run(); });
+$("url").addEventListener("input", (e) => detectService(e.target.value.trim()));
+$("url").addEventListener("paste", () => setTimeout(() => detectService($("url").value.trim()), 0));
 $("paste").addEventListener("click", async () => {
-  try { $("url").value = await navigator.clipboard.readText(); $("url").focus(); }
-  catch (e) { $("url").focus(); }
+  try {
+    $("url").value = await navigator.clipboard.readText();
+    detectService($("url").value.trim());
+    $("url").focus();
+  } catch (e) { $("url").focus(); }
 });
-$("mode").addEventListener("change", () => {
-  const audio = $("mode").value === "audio";
-  $("abwrap").classList.toggle("hidden", !audio);
-  $("vqwrap").classList.toggle("hidden", audio);
+
+/* segmented: modo */
+document.querySelectorAll("#segmode .segbtn").forEach((b) => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#segmode .segbtn").forEach((x) => x.classList.remove("active"));
+    b.classList.add("active");
+    state.mode = b.dataset.mode;
+    const audio = state.mode === "audio";
+    $("quals-audio").classList.toggle("hidden", !audio);
+    $("quals-video").classList.toggle("hidden", audio);
+  });
+});
+
+/* píldoras: calidad */
+document.querySelectorAll("#quals-video .qbtn").forEach((b) => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#quals-video .qbtn").forEach((x) => x.classList.remove("active"));
+    b.classList.add("active");
+    state.vquality = b.dataset.q;
+  });
+});
+document.querySelectorAll("#quals-audio .qbtn").forEach((b) => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#quals-audio .qbtn").forEach((x) => x.classList.remove("active"));
+    b.classList.add("active");
+    state.abitrate = b.dataset.q;
+  });
 });
 
 renderHistory();

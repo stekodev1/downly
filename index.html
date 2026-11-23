@@ -6,57 +6,85 @@
 <title>descargador — mp3 / mp4</title>
 <meta name="description" content="Descarga vídeo y audio de YouTube, Spotify, TikTok, Instagram, Twitch y más. Gratis, sin líos.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⬇️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+<div class="glow glow-a"></div>
+<div class="glow glow-b"></div>
+
 <main class="wrap">
 
-  <header>
-    <h1>descargador<span class="accent">.</span></h1>
-    <p class="sub">pega un enlace, elige formato, descarga.<br>
-    <span class="services">youtube · spotify · tiktok · instagram · x · twitch · soundcloud · reddit · vimeo y más</span></p>
+  <nav class="nav">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg>
+      <span>descargador</span>
+    </div>
+    <a class="navlink" href="https://github.com/stekodev1/descargador-web" target="_blank" rel="noopener">github</a>
+  </nav>
+
+  <header class="hero">
+    <h1>pega. elige. <em>descarga.</em></h1>
+    <p class="sub">vídeo y audio en un click, sin líos ni registro</p>
+    <div class="chips">
+      <span class="chip">youtube</span><span class="chip">spotify</span><span class="chip">tiktok</span><span class="chip">instagram</span><span class="chip">x</span><span class="chip">twitch</span><span class="chip">soundcloud</span><span class="chip">+15</span>
+    </div>
   </header>
 
-  <section class="box">
-    <div class="row inputrow">
+  <section class="drop" id="dropcard">
+    <div class="inputwrap">
+      <svg class="ilink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
       <input id="url" type="url" inputmode="url" autocomplete="off" spellcheck="false"
-             placeholder="https://www.youtube.com/watch?v=…  ó  https://open.spotify.com/track/…">
-      <button id="paste" title="pegar del portapapeles">pegar</button>
+             placeholder="pega aquí tu enlace…">
+      <button id="paste" class="ghost" title="pegar del portapapeles">pegar</button>
+      <button id="go" class="primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg>
+        <span>descargar</span>
+      </button>
+    </div>
+    <div id="detected" class="detected hidden"></div>
+  </section>
+
+  <section class="controls">
+    <div class="seg" id="segmode">
+      <button class="segbtn active" data-mode="auto">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m10 9 5 3-5 3z"/></svg>
+        vídeo mp4
+      </button>
+      <button class="segbtn" data-mode="audio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        audio mp3
+      </button>
+      <button class="segbtn" data-mode="mute">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m4 4 16 16"/></svg>
+        sin sonido
+      </button>
     </div>
 
-    <div class="row opts">
-      <label>
-        formato
-        <select id="mode">
-          <option value="auto">vídeo (mp4)</option>
-          <option value="audio">audio (mp3)</option>
-          <option value="mute">vídeo sin sonido</option>
-        </select>
-      </label>
-      <label id="vqwrap">
-        calidad vídeo
-        <select id="vquality">
-          <option value="max">máxima</option>
-          <option value="1080" selected>1080p</option>
-          <option value="720">720p</option>
-          <option value="480">480p</option>
-          <option value="360">360p</option>
-        </select>
-      </label>
-      <label id="abwrap" class="hidden">
-        bitrate mp3
-        <select id="abitrate">
-          <option value="320">320k</option>
-          <option value="256">256k</option>
-          <option value="128" selected>128k</option>
-        </select>
-      </label>
-      <button id="go" class="primary">descargar</button>
+    <div class="quals" id="quals-video">
+      <span class="qlabel">calidad</span>
+      <button class="qbtn active" data-q="max">máx</button>
+      <button class="qbtn" data-q="1080">1080p</button>
+      <button class="qbtn" data-q="720">720p</button>
+      <button class="qbtn" data-q="480">480p</button>
+      <button class="qbtn" data-q="360">360p</button>
+    </div>
+
+    <div class="quals hidden" id="quals-audio">
+      <span class="qlabel">bitrate</span>
+      <button class="qbtn" data-q="320">320k</button>
+      <button class="qbtn" data-q="256">256k</button>
+      <button class="qbtn active" data-q="128">128k</button>
     </div>
   </section>
 
   <div id="status" class="status hidden"></div>
+
   <div id="result" class="result hidden"></div>
+
   <div id="picker" class="picker hidden"></div>
 
   <section id="historysec" class="history hidden">
@@ -67,8 +95,7 @@
   <div id="ts" class="ts"></div>
 
   <footer>
-    <p>motor: instancias públicas de <a href="https://cobalt.tools" target="_blank" rel="noopener">cobalt</a> ·
-    los archivos van directos del servidor a tu navegador · hecho para uso personal</p>
+    <p>los archivos viajan directos a tu navegador · motor: instancias públicas de <a href="https://cobalt.tools" target="_blank" rel="noopener">cobalt</a></p>
   </footer>
 
 </main>

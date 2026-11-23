@@ -584,6 +584,14 @@ button.primary.loading span { opacity: 0; }
 .result a.dl:hover { transform: translateY(-1px); filter: brightness(1.06); }
 .result a.dl:active { transform: scale(0.98); }
 .result .note { color: rgba(110, 190, 150, 0.75); font-size: 12.5px; margin-top: 12px; }
+.result a.alt {
+  display: inline-block;
+  margin-top: 10px;
+  color: rgba(110, 190, 150, 0.65);
+  font-size: 12px;
+  text-decoration: none;
+}
+.result a.alt:hover { text-decoration: underline; }
 .rcheck {
   width: 42px; height: 42px;
   border-radius: 50%;

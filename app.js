@@ -99,7 +99,7 @@ function setStep(el, text, state) {
 }
 function clearResult() { $("result").classList.add("hidden"); }
 
-function showResult(url, filename) {
+function showResult(url, filename, altUrl) {
   if (!/^(https:\/\/|blob:|\/api\/)/.test(url)) return; // solo urls seguras
   const r = $("result");
   r.classList.remove("hidden");
@@ -112,15 +112,22 @@ function showResult(url, filename) {
   a.href = url;
   a.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg> Guardar archivo';
   a.setAttribute("download", filename || "");
-  if (/^https:/.test(url)) { a.target = "_blank"; a.rel = "noopener"; }
   const note = document.createElement("div");
   note.className = "note";
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   note.textContent = isIOS
     ? "En iPhone: mantén pulsado «Guardar archivo» → Descargar vídeo / Guardar en Archivos"
-    : "Si no empieza solo, mantén pulsado el botón → «guardar enlace»";
+    : "Si no empieza solo, pulsa «Guardar archivo» — o usa el enlace alternativo";
   r.append(f, a, note);
+  if (altUrl && /^(https:\/\/|\/api\/)/.test(altUrl)) {
+    const alt = document.createElement("a");
+    alt.className = "alt";
+    alt.href = altUrl;
+    alt.setAttribute("download", filename || "");
+    alt.textContent = "descarga alternativa ↗";
+    r.appendChild(alt);
+  }
   a.click();
 }
 
@@ -169,19 +176,45 @@ async function extract(url, log) {
   return { ok: false, errs };
 }
 
-/* la descarga pasa por /api/dl (mismo dominio): Content-Disposition
-   attachment fuerza el guardado — el navegador nunca navega fuera */
-async function deliver(pick, fname) {
+/* estrategia de descarga:
+   - proxy /api/dl (mismo dominio, nombre con marca) cuando el archivo
+     cabe en la función — upstream ~25KB/s y hay límite de duración
+   - enlace directo para archivos grandes/desconocidos: dl.gendownload
+     envía attachment nativo → descarga sin salir de la página */
+const PROXY_LIMIT = 12 * 1024 * 1024; // ~12MB: holgado bajo el timeout
+
+/* filesize de gendownload no es fiable — estima por duración × bitrate */
+function estSize(pick, durSec) {
+  const q = parseInt(pick.label, 10) || 0;
+  const rate = pick.type === "audio" ? 20 : q >= 2160 ? 1200 : q >= 1080 ? 350 : q >= 720 ? 200 : 100;
+  if (durSec) return durSec * rate * 1024;
+  const fs = pick.filesize || 0;
+  return fs > 0 && fs <= PROXY_LIMIT ? fs : 0;
+}
+
+function dlRoute(pick, fname, sizeEst) {
+  const proxy = `/api/dl?u=${encodeURIComponent(pick.url)}&f=${encodeURIComponent(fname)}`;
+  let host = "";
+  try { host = new URL(pick.url).hostname; } catch {}
+  const slowUp = /(^|\.)gendownload\.com$/i.test(host); // upstream capado
+  const viaProxy = !slowUp || (sizeEst > 0 && sizeEst <= PROXY_LIMIT);
+  return {
+    main: viaProxy ? proxy : pick.url,
+    alt: viaProxy ? pick.url : proxy, // ruta alternativa para el botón
+  };
+}
+
+async function deliver(pick, fname, sizeEst) {
   const s3 = step("Descargando archivo…");
-  const u = `/api/dl?u=${encodeURIComponent(pick.url)}&f=${encodeURIComponent(fname)}`;
+  const { main, alt } = dlRoute(pick, fname, sizeEst);
   const a = document.createElement("a");
-  a.href = u;
+  a.href = main;
   a.download = fname;
   document.body.appendChild(a);
   a.click();
   a.remove();
   setStep(s3, "Descarga completada", "done");
-  showResult(u, fname);
+  showResult(main, fname, alt);
 }
 
 /* elige el mejor formato según el modo y la calidad elegida */
@@ -239,7 +272,7 @@ async function run() {
         if (pick) {
           setStep(s2, `Lista: ${t.title}`, "done");
           const fn = brandName(t.title, pick.ext || "mp3");
-          await deliver(pick, fn);
+          await deliver(pick, fn, estSize(pick, res.data.duration));
           pushHistory(url, fn);
         } else {
           setStep(s2, `Falló: ${t.title}`, "err");
@@ -261,7 +294,7 @@ async function run() {
       return;
     }
     const fname = brandName(res.data.title, pick.ext || (pick.type === "audio" ? "mp3" : "mp4"));
-    await deliver(pick, fname);
+    await deliver(pick, fname, estSize(pick, res.data.duration));
     pushHistory(url, fname);
   } catch (e) {
     step("Error: " + e.message, "err");

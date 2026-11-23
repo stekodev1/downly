@@ -1,4 +1,4 @@
-/* downly — motor cliente.
+﻿/* downly — motor cliente.
    Todo el trabajo pesado lo hacen instancias públicas de cobalt;
    la página solo orquesta: turnstile -> jwt -> post / -> url de descarga. */
 
@@ -57,7 +57,7 @@ function detectService(url) {
   if (!url) { det.classList.add("hidden"); return; }
   const hit = SERVICES.find(([re]) => re.test(url));
   det.classList.remove("hidden");
-  det.textContent = hit ? `detectado: ${hit[1]}` : "servicio no reconocido — probaré igualmente";
+  det.textContent = hit ? `Detectado: ${hit[1]}` : "Servicio no reconocido — probaré igualmente";
   det.style.color = hit ? "" : "var(--err)";
 }
 
@@ -84,17 +84,17 @@ function showResult(url, filename) {
   r.innerHTML = "";
   const f = document.createElement("div");
   f.className = "fname";
-  f.textContent = filename || "descarga lista";
+  f.textContent = filename || "Descarga lista";
   const a = document.createElement("a");
   a.className = "dl";
   a.href = url;
-  a.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg> guardar archivo';
+  a.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg> Guardar archivo';
   a.setAttribute("download", filename || "");
   a.target = "_blank";
   a.rel = "noopener";
   const note = document.createElement("div");
   note.className = "note";
-  note.textContent = "si no empieza solo, mantén pulsado el botón → «guardar enlace»";
+  note.textContent = "Si no empieza solo, mantén pulsado el botón → «guardar enlace»";
   r.append(f, a, note);
   a.click();
 }
@@ -102,7 +102,7 @@ function showResult(url, filename) {
 function showPicker(items) {
   const p = $("picker");
   p.classList.remove("hidden");
-  p.innerHTML = "<h3>varios elementos en el enlace — elige cuál bajar:</h3>";
+  p.innerHTML = "<h3>Varios elementos en el enlace — Elige cuál bajar:</h3>";
   items.forEach((it, i) => {
     const row = document.createElement("div");
     row.className = "item";
@@ -110,12 +110,12 @@ function showPicker(items) {
     n.className = "n";
     n.textContent = i + 1;
     const t = document.createElement("span");
-    t.textContent = it.type === "photo" ? "imagen" : "vídeo / audio";
+    t.textContent = it.type === "photo" ? "Imagen" : "Vídeo / audio";
     const a = document.createElement("a");
     a.href = it.url;
     a.target = "_blank";
     a.rel = "noopener";
-    a.textContent = "descargar ↗";
+    a.textContent = "Descargar ↗";
     row.append(n, t, a);
     p.appendChild(row);
   });
@@ -152,7 +152,7 @@ function loadTurnstile() {
     const s = document.createElement("script");
     s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
     s.onload = () => { turnstileApi = window.turnstile; res(turnstileApi); };
-    s.onerror = () => rej(new Error("no se pudo cargar turnstile"));
+    s.onerror = () => rej(new Error("No se pudo cargar Turnstile"));
     document.head.appendChild(s);
   });
 }
@@ -161,12 +161,12 @@ function solveTurnstile(sitekey) {
   return loadTurnstile().then((ts) => new Promise((res, rej) => {
     const slot = $("ts");
     slot.innerHTML = "";
-    const timer = setTimeout(() => rej(new Error("turnstile tardó demasiado")), 30000);
+    const timer = setTimeout(() => rej(new Error("Turnstile tardó demasiado")), 30000);
     try {
       ts.render(slot, {
         sitekey,
         callback: (token) => { clearTimeout(timer); res(token); },
-        "error-callback": () => { clearTimeout(timer); rej(new Error("turnstile falló")); },
+        "error-callback": () => { clearTimeout(timer); rej(new Error("Turnstile falló")); },
         size: "compact",
       });
     } catch (e) { clearTimeout(timer); rej(e); }
@@ -186,7 +186,7 @@ async function getInfo(host) {
 async function getJwt(host, info) {
   const s = sessions[host];
   if (s && s.expMs - Date.now() > 20000) return s.jwt;
-  if (!info.turnstileSitekey) return null;              // instancia sin turnstile
+  if (!info.turnstileSitekey) return null;              // Instancia sin turnstile
   const token = await solveTurnstile(info.turnstileSitekey);
   const r = await fetch(`https://${host}/session`, {
     method: "POST",
@@ -208,33 +208,33 @@ async function cobaltRequest(host, jwt, body) {
   return j;
 }
 
-/* intenta la descarga contra cada instancia hasta que una funcione */
+/* intenta la descarga contra cada Instancia hasta que una funcione */
 async function cobaltDownload(payload, log) {
   const errs = [];
   for (const host of INSTANCES) {
     let st;
     try {
-      st = log(`conectando con ${host.split(".")[0]}…`);
+      st = log(`Conectando con ${host.split(".")[0]}…`);
       const info = await getInfo(host);
       const jwt = await getJwt(host, info);
-      setStep(st, `instancia ${host.split(".")[0]} ok`, "done");
+      setStep(st, `Instancia ${host.split(".")[0]} ok`, "done");
 
-      st = log("pidiendo el archivo…");
+      st = log("Pidiendo el archivo…");
       const resp = await cobaltRequest(host, jwt, payload);
       if (resp.status === "tunnel" || resp.status === "redirect") {
-        setStep(st, "enlace listo", "done");
+        setStep(st, "Enlace listo", "done");
         return { ok: true, url: resp.url, filename: resp.filename, host };
       }
       if (resp.status === "picker") {
-        setStep(st, "varios elementos", "done");
+        setStep(st, "Varios elementos", "done");
         return { ok: true, picker: resp.picker || [], host };
       }
       const code = resp.error?.code || "desconocido";
-      setStep(st, `dijo: ${code}`, "err");
+      setStep(st, `Dijo: ${code}`, "err");
       errs.push(`${host}: ${code}`);
       if (code.includes("jwt") || code.includes("auth")) delete sessions[host];
     } catch (e) {
-      if (st) setStep(st, `fallo: ${e.message}`, "err");
+      if (st) setStep(st, `Fallo: ${e.message}`, "err");
       errs.push(`${host}: ${e.message}`);
     }
   }
@@ -274,21 +274,21 @@ async function run() {
     };
 
     if (isSpotify) {
-      const st = step("resolviendo canción(es) de spotify…");
+      const st = step("Resolviendo canción(es) de spotify…");
       const tracks = await resolveSpotify(url);
       setStep(st, `${tracks.length} canción(es) encontrada(s)`, "done");
       let done = 0;
       for (const t of tracks) {
-        const s2 = step(`bajando: ${t.title}…`);
+        const s2 = step(`Bajando: ${t.title}…`);
         const res = await cobaltDownload({ ...base, url: t.youtubeUrl, downloadMode: "audio" }, step);
         if (res.ok && res.url) {
-          setStep(s2, `lista: ${t.title}`, "done");
+          setStep(s2, `Lista: ${t.title}`, "done");
           showResult(res.url, res.filename || (t.title + ".mp3"));
           pushHistory(url, res.filename || t.title);
         } else {
-          setStep(s2, `falló: ${t.title}`, "err");
+          setStep(s2, `Falló: ${t.title}`, "err");
         }
-        if (++done >= 10) { step("límite de 10 pistas por tanda", "err"); break; }
+        if (++done >= 10) { step("Límite de 10 pistas por tanda", "err"); break; }
       }
       return;
     }
@@ -299,13 +299,13 @@ async function run() {
       pushHistory(url, res.filename);
     } else if (res.ok && res.picker) {
       showPicker(res.picker);
-      pushHistory(url, "varios elementos");
+      pushHistory(url, "Varios elementos");
     } else {
-      step("ninguna instancia pudo con este enlace ahora mismo — prueba en un rato u otro link", "err");
+      step("Ninguna instancia pudo con este enlace ahora mismo — prueba en un rato u otro link", "err");
       console.warn(res.errs);
     }
   } catch (e) {
-    step("error: " + e.message, "err");
+    step("Error: " + e.message, "err");
   } finally {
     busy = false;
     $("go").disabled = false;

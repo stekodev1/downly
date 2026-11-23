@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#05060a">
-<title>Downly — descarga lo que quieras</title>
-<meta name="description" content="Downly: vídeo mp4 y audio mp3 de YouTube, Spotify, TikTok, Instagram y +20 servicios. Gratis, rápido, sin registro.">
+<title>Downly — Descarga lo que quieras</title>
+<meta name="description" content="Downly: Vídeo mp4 y audio mp3 de YouTube, Spotify, TikTok, Instagram y +20 servicios. Gratis, rápido, sin registro.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236d8dff'/%3E%3Cstop offset='1' stop-color='%23b16dff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M32 16v20M23 28l9 9 9-9M20 46h24' stroke='white' stroke-width='5.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,11 +34,11 @@
   </nav>
 
   <header class="hero">
-    <div class="eyebrow"><span class="edot"></span>descargas sin límites</div>
-    <h1>pega. descarga. <em>listo.</em></h1>
-    <p class="sub">vídeo mp4 y audio mp3 de cualquier rincón de internet — rápido y sin complicaciones.</p>
+    <div class="eyebrow"><span class="edot"></span>Descargas sin límites</div>
+    <h1>Pega. Descarga. <em>Listo.</em></h1>
+    <p class="sub">Vídeo mp4 y audio mp3 de cualquier rincón de internet — rápido y sin complicaciones.</p>
     <div class="svcs" aria-label="servicios soportados">
-      <span>youtube</span><span>spotify</span><span>tiktok</span><span>instagram</span><span>x</span><span>twitch</span><span>soundcloud</span><span>reddit</span><span>vimeo</span><span class="more">+15 más</span>
+      <span>YouTube</span><span>Spotify</span><span>TikTok</span><span>Instagram</span><span>X</span><span>Twitch</span><span>SoundCloud</span><span>Reddit</span><span>Vimeo</span><span class="more">+15 más</span>
     </div>
   </header>
 
@@ -46,11 +46,11 @@
     <div class="inputwrap">
       <svg class="ilink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
       <input id="url" type="url" inputmode="url" autocomplete="off" spellcheck="false"
-             placeholder="pega aquí tu enlace…">
-      <button id="paste" class="ghost" title="pegar del portapapeles">pegar</button>
+             placeholder="Pega aquí tu enlace…">
+      <button id="paste" class="ghost" title="Pegar del portapapeles">Pegar</button>
       <button id="go" class="primary">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg>
-        <span>descargar</span>
+        <span>Descargar</span>
       </button>
     </div>
     <div id="detected" class="detected hidden"></div>
@@ -61,21 +61,21 @@
       <div class="seg" id="segmode" role="group" aria-label="formato">
         <button class="segbtn active" data-mode="auto">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m10 9 5 3-5 3z"/></svg>
-          vídeo mp4
+          Vídeo mp4
         </button>
         <button class="segbtn" data-mode="audio">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-          audio mp3
+          Audio mp3
         </button>
         <button class="segbtn" data-mode="mute">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m4 4 16 16"/></svg>
-          sin sonido
+          Sin sonido
         </button>
       </div>
 
       <div class="quals" id="quals-video" role="group" aria-label="calidad de vídeo">
         <span class="qlabel">calidad</span>
-        <button class="qbtn active" data-q="max">máx</button>
+        <button class="qbtn active" data-q="max">Máx</button>
         <button class="qbtn" data-q="1080">1080p</button>
         <button class="qbtn" data-q="720">720p</button>
         <button class="qbtn" data-q="480">480p</button>
@@ -107,27 +107,27 @@
       <div class="ficon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
       </div>
-      <h3>al instante</h3>
-      <p>resuelve el enlace en segundos y salta directo a la descarga.</p>
+      <h3>Al instante</h3>
+      <p>Resuelve el enlace en segundos y salta directo a la descarga.</p>
     </div>
     <div class="feat">
       <div class="ficon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
       </div>
-      <h3>sin fricción</h3>
-      <p>sin cuentas ni líos — pegas el link, eliges formato y ya.</p>
+      <h3>Sin fricción</h3>
+      <p>Sin cuentas ni líos — pegas el link, eliges formato y ya.</p>
     </div>
     <div class="feat">
       <div class="ficon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 8.5 4.5L12 11 3.5 6.5 12 2z"/><path d="m3.5 12 8.5 4.5L20.5 12"/><path d="m3.5 17.5 8.5 4.5 8.5-4.5"/></svg>
       </div>
-      <h3>calidad real</h3>
-      <p>hasta 8K de vídeo y 320 kbps de audio cuando el origen lo permite.</p>
+      <h3>Calidad real</h3>
+      <p>Hasta 8K de vídeo y 320 kbps de audio cuando el origen lo permite.</p>
     </div>
   </section>
 
   <footer>
-    <span class="fmark">↓</span> downly — tu enlace, tu archivo.
+    <span class="fmark">↓</span> downly — Tu enlace, tu archivo.
   </footer>
 
 </main>

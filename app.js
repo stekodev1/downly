@@ -128,7 +128,6 @@ function showResult(url, filename, altUrl) {
     alt.textContent = "descarga alternativa ↗";
     r.appendChild(alt);
   }
-  a.click();
 }
 
 /* ---------- historial (solo en memoria — no se guarda nada) ---------- */

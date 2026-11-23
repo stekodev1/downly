@@ -49,7 +49,14 @@ body {
 
 /* ---------- fondo ---------- */
 
-.bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.bg {
+  position: fixed;
+  inset: -40px;
+  z-index: 0;
+  pointer-events: none;
+  transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
 
 .orb {
   position: absolute;
@@ -180,6 +187,14 @@ body {
   letter-spacing: -2.6px;
   line-height: 1.03;
 }
+.rl { display: block; overflow: hidden; }
+.rl > span {
+  display: block;
+  transform: translateY(115%);
+  animation: reveal 0.9s var(--ease) 0.1s forwards;
+}
+.rl2 > span { animation-delay: 0.26s; }
+@keyframes reveal { to { transform: none; } }
 .hero h1 em {
   font-family: var(--font-serif);
   font-style: italic;
@@ -299,7 +314,8 @@ body {
   padding: 17px 4px;
   font-family: var(--font-ui);
 }
-#url::placeholder { color: var(--faint); }
+#url::placeholder { color: var(--faint); transition: color 0.4s ease; }
+#url.phswap::placeholder { color: transparent; }
 
 button { font-family: var(--font-ui); cursor: pointer; transition: all 0.18s var(--ease); }
 button:focus-visible, input:focus-visible, a:focus-visible {
@@ -346,6 +362,22 @@ button.primary:hover::after { transform: translateX(120%); }
 button.primary:active { transform: translateY(0) scale(0.98); }
 button.primary:disabled { opacity: 0.55; cursor: wait; transform: none; }
 button.primary svg { width: 17px; height: 17px; }
+button.primary::before {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 17px; height: 17px;
+  margin: -9px 0 0 -9px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  opacity: 0;
+  animation: spin 0.7s linear infinite;
+  transition: opacity 0.2s;
+}
+button.primary.loading::before { opacity: 1; }
+button.primary.loading svg,
+button.primary.loading span { opacity: 0; }
 
 .detected {
   padding: 10px 14px 6px;
@@ -516,6 +548,29 @@ button.primary svg { width: 17px; height: 17px; }
 .result a.dl:hover { transform: translateY(-1px); filter: brightness(1.06); }
 .result a.dl:active { transform: scale(0.98); }
 .result .note { color: rgba(110, 190, 150, 0.75); font-size: 12.5px; margin-top: 12px; }
+.rcheck {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: var(--ok);
+  color: #04281a;
+  display: grid;
+  place-items: center;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 24px -6px rgba(52, 211, 153, 0.5);
+  animation: checkpop 0.45s var(--ease) both;
+}
+.rcheck svg { width: 20px; height: 20px; }
+.rcheck path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: drawcheck 0.4s 0.18s ease forwards;
+}
+@keyframes drawcheck { to { stroke-dashoffset: 0; } }
+@keyframes checkpop {
+  from { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.08); }
+  to { transform: scale(1); opacity: 1; }
+}
 
 /* ---------- picker ---------- */
 
@@ -636,6 +691,9 @@ button.primary svg { width: 17px; height: 17px; }
   transform: translateY(-3px);
 }
 .feat:hover::after { opacity: 1; }
+.feat.pre { opacity: 0; transform: translateY(22px); }
+.feat.pre.in { opacity: 1; transform: none; }
+.feat.in:hover { transform: translateY(-3px); }
 .ficon {
   width: 34px; height: 34px;
   display: grid; place-items: center;

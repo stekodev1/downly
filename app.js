@@ -81,7 +81,7 @@ function clearResult() { $("result").classList.add("hidden"); $("picker").classL
 function showResult(url, filename) {
   const r = $("result");
   r.classList.remove("hidden");
-  r.innerHTML = "";
+  r.innerHTML = '<div class="rcheck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>';
   const f = document.createElement("div");
   f.className = "fname";
   f.textContent = filename || "Descarga lista";
@@ -259,6 +259,10 @@ async function run() {
 
   busy = true;
   $("go").disabled = true;
+  $("go").classList.add("loading");
+  const goLabel = $("go").querySelector("span");
+  const goLabelOld = goLabel.textContent;
+  goLabel.textContent = "Descargando…";
   clearResult();
   showStatus();
 
@@ -309,6 +313,8 @@ async function run() {
   } finally {
     busy = false;
     $("go").disabled = false;
+    $("go").classList.remove("loading");
+    goLabel.textContent = goLabelOld;
   }
 }
 
@@ -361,6 +367,50 @@ document.querySelectorAll(".tool, .feat").forEach((el) => {
     el.style.setProperty("--mx", `${e.clientX - r.left}px`);
     el.style.setProperty("--my", `${e.clientY - r.top}px`);
   });
+});
+
+/* botón magnético */
+const goBtn = $("go");
+goBtn.addEventListener("pointermove", (e) => {
+  const r = goBtn.getBoundingClientRect();
+  const dx = e.clientX - (r.left + r.width / 2);
+  const dy = e.clientY - (r.top + r.height / 2);
+  goBtn.style.transform = `translate(${dx * 0.16}px, ${dy * 0.26}px)`;
+});
+goBtn.addEventListener("pointerleave", () => { goBtn.style.transform = ""; });
+
+/* parallax sutil del fondo */
+const bgEl = document.querySelector(".bg");
+addEventListener("pointermove", (e) => {
+  const x = (e.clientX / innerWidth - 0.5) * 26;
+  const y = (e.clientY / innerHeight - 0.5) * 20;
+  bgEl.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+}, { passive: true });
+
+/* placeholder rotativo */
+const PH = ["Pega un link de YouTube…", "Pega un link de Spotify…", "Pega un link de TikTok…",
+            "Pega un link de Instagram…", "Pega un link de X…", "Pega un link de Twitch…",
+            "Pega aquí tu enlace…"];
+let phi = 0;
+setInterval(() => {
+  const inp = $("url");
+  if (document.activeElement === inp || inp.value) return;
+  inp.classList.add("phswap");
+  setTimeout(() => {
+    phi = (phi + 1) % PH.length;
+    inp.placeholder = PH[phi];
+    inp.classList.remove("phswap");
+  }, 420);
+}, 3400);
+
+/* features: reveal al hacer scroll */
+const io = new IntersectionObserver((es) => es.forEach((e) => {
+  if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+}), { threshold: 0.2 });
+document.querySelectorAll(".feat").forEach((f, i) => {
+  f.classList.add("pre");
+  f.style.transitionDelay = `${i * 70}ms`;
+  io.observe(f);
 });
 
 renderHistory();

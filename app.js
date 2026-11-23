@@ -99,6 +99,10 @@ function setStep(el, text, state) {
 }
 function clearResult() { $("result").classList.add("hidden"); }
 
+function safeHost(u) {
+  try { return new URL(u).hostname; } catch { return ""; }
+}
+
 function showResult(url, filename, altUrl) {
   if (!/^(https:\/\/|blob:|\/api\/)/.test(url)) return; // solo urls seguras
   const r = $("result");
@@ -112,6 +116,9 @@ function showResult(url, filename, altUrl) {
   a.href = url;
   a.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg> Guardar archivo';
   a.setAttribute("download", filename || "");
+  // hosts con attachment propio → descarga en la misma pestaña (sin tab fantasma)
+  const isAttachment = /(^|\.)(workers\.dev|gendownload\.com)$/.test(safeHost(url));
+  if (!isAttachment && /^https:/.test(url)) { a.target = "_blank"; a.rel = "noopener"; }
   const note = document.createElement("div");
   note.className = "note";
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
@@ -125,6 +132,8 @@ function showResult(url, filename, altUrl) {
     alt.className = "alt";
     alt.href = altUrl;
     alt.setAttribute("download", filename || "");
+    const altAttach = /(^|\.)(workers\.dev|gendownload\.com)$/.test(safeHost(altUrl));
+    if (!altAttach) { alt.target = "_blank"; alt.rel = "noopener"; }
     alt.textContent = "descarga alternativa ↗";
     r.appendChild(alt);
   }
@@ -175,19 +184,14 @@ async function extract(url, log) {
   return { ok: false, errs };
 }
 
-/* estrategia de descarga:
-   - gendownload (upstream ~25KB/s capado): enlace directo — su servidor
-     envía attachment nativo, el navegador lo gestiona sin límite de
-     tiempo y con reanudación. el proxy se queda como alternativa.
-   - tikwm / twimg (CDN rápidos): siempre proxy — marca + attachment. */
+/* túnel de descarga en cloudflare workers — límite de CPU, no de duración:
+   un stream lento puede tardar lo que haga falta sin cortarse.
+   todo pasa por él → attachment + nombre con marca siempre. */
+const DL_WORKER = "https://downly-dl.stekoo-remote.workers.dev/";
+
 function dlRoute(pick, fname) {
-  const proxy = `/api/dl?u=${encodeURIComponent(pick.url)}&f=${encodeURIComponent(fname)}`;
-  let host = "";
-  try { host = new URL(pick.url).hostname; } catch {}
-  const slowUp = /(^|\.)gendownload\.com$/i.test(host);
-  return slowUp
-    ? { main: pick.url, alt: proxy }
-    : { main: proxy, alt: pick.url };
+  const proxy = `${DL_WORKER}?u=${encodeURIComponent(pick.url)}&f=${encodeURIComponent(fname)}`;
+  return { main: proxy, alt: pick.url }; // alt: enlace directo de rescate
 }
 
 async function deliver(pick, fname) {

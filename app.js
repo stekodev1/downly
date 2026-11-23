@@ -1,27 +1,44 @@
 ﻿/* downly — motor cliente.
-   Todo el trabajo pesado lo hacen instancias públicas de cobalt;
-   la página solo orquesta: turnstile -> jwt -> post / -> url de descarga. */
+   Resuelve enlaces contra APIs públicas de extracción (gendownload
+   y respaldo); la página solo orquesta: extract -> elegir formato -> descarga. */
 
-const INSTANCES = [
-  "bergung-api.hoffnungfuerdiezukunft.net",
-  "apicobalt.girlskissing.top",
-  "nuko-c.meowing.de",
-  "yuuri-c.meowing.de",
-  "eulogy-c.meowing.de",
-  "api.cobalt.rpkiinval.id",
-  "grapefruit.clxxped.lol",
-  "lime.clxxped.lol",
-  "melon.clxxped.lol",
-  "cobaltapi.kittycat.boo",
-  "dog.kittycat.boo",
-  "capi.3kh0.net",
-  "cobalt-api.meowing.de",
-  "cobalt-backend.canine.tools",
+const ENGINES = [
+  {
+    name: "gendownload",
+    extract: (url) => fetch("https://gendownload.com/api/extract", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    }).then((r) => r.json()),
+  },
+  {
+    name: "tikwm",
+    match: /tiktok\.com/,
+    extract: (url) => fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`)
+      .then((r) => r.json())
+      .then((j) => ({
+        title: j?.data?.title,
+        source: "tiktok",
+        formats: j?.data ? [
+          j.data.play && { label: "HD", type: "video", ext: "mp4", url: j.data.play },
+          j.data.music && { label: "Audio", type: "audio", ext: "mp3", url: j.data.music },
+        ].filter(Boolean) : [],
+      })),
+  },
+  {
+    name: "fxtwitter",
+    match: /twitter\.com|x\.com/,
+    extract: (url) => fetch(`https://api.fxtwitter.com/${url.replace(/^https?:\/\/(www\.)?(twitter\.com|x\.com)\//, "")}`)
+      .then((r) => r.json())
+      .then((j) => ({
+        title: j?.tweet?.text,
+        source: "x",
+        formats: (j?.tweet?.media?.videos || []).map((v) => ({ label: "Vídeo", type: "video", ext: "mp4", url: v.url })),
+      })),
+  },
 ];
 
 const $ = (id) => document.getElementById(id);
-const sessions = {};   // host -> { jwt, expMs }
-let turnstileApi = null;
 let busy = false;
 
 /* estado de selección */
@@ -144,101 +161,44 @@ function renderHistory() {
   });
 }
 
-/* ---------- turnstile ---------- */
+/* ---------- motores de extracción ---------- */
 
-function loadTurnstile() {
-  if (turnstileApi) return Promise.resolve(turnstileApi);
-  return new Promise((res, rej) => {
-    const s = document.createElement("script");
-    s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-    s.onload = () => { turnstileApi = window.turnstile; res(turnstileApi); };
-    s.onerror = () => rej(new Error("No se pudo cargar Turnstile"));
-    document.head.appendChild(s);
-  });
-}
-
-function solveTurnstile(sitekey) {
-  return loadTurnstile().then((ts) => new Promise((res, rej) => {
-    const slot = $("ts");
-    slot.innerHTML = "";
-    const timer = setTimeout(() => rej(new Error("Turnstile tardó demasiado")), 30000);
-    try {
-      ts.render(slot, {
-        sitekey,
-        callback: (token) => { clearTimeout(timer); res(token); },
-        "error-callback": () => { clearTimeout(timer); rej(new Error("Turnstile falló")); },
-        size: "compact",
-      });
-    } catch (e) { clearTimeout(timer); rej(e); }
-  }));
-}
-
-/* ---------- cobalt ---------- */
-
-async function getInfo(host) {
-  const r = await fetch(`https://${host}/`, { headers: { Accept: "application/json" } });
-  if (!r.ok) throw new Error("info http " + r.status);
-  const j = await r.json();
-  if (!j.cobalt) throw new Error("respuesta rara");
-  return j.cobalt;
-}
-
-async function getJwt(host, info) {
-  const s = sessions[host];
-  if (s && s.expMs - Date.now() > 20000) return s.jwt;
-  if (!info.turnstileSitekey) return null;              // Instancia sin turnstile
-  const token = await solveTurnstile(info.turnstileSitekey);
-  const r = await fetch(`https://${host}/session`, {
-    method: "POST",
-    headers: { Accept: "application/json", "cf-turnstile-response": token },
-  });
-  const j = await r.json();
-  if (!j.token) throw new Error("session: " + (j.error?.code || r.status));
-  sessions[host] = { jwt: j.token, expMs: Date.now() + j.exp * 1000 };
-  return j.token;
-}
-
-async function cobaltRequest(host, jwt, body) {
-  const headers = { Accept: "application/json", "Content-Type": "application/json" };
-  if (jwt) headers.Authorization = "Bearer " + jwt;
-  const r = await fetch(`https://${host}/`, { method: "POST", headers, body: JSON.stringify(body) });
-  let j = {};
-  try { j = await r.json(); } catch (e) {}
-  if (!r.ok && !j.status) j = { status: "error", error: { code: "http_" + r.status } };
-  return j;
-}
-
-/* intenta la descarga contra cada Instancia hasta que una funcione */
-async function cobaltDownload(payload, log) {
+async function extract(url, log) {
   const errs = [];
-  for (const host of INSTANCES) {
-    let st;
+  for (const eng of ENGINES) {
+    if (eng.match && !eng.match.test(url)) continue;
+    const st = log(`Resolviendo con ${eng.name}…`);
     try {
-      st = log(`Conectando con ${host.split(".")[0]}…`);
-      const info = await getInfo(host);
-      const jwt = await getJwt(host, info);
-      setStep(st, `Instancia ${host.split(".")[0]} ok`, "done");
-
-      st = log("Pidiendo el archivo…");
-      const resp = await cobaltRequest(host, jwt, payload);
-      if (resp.status === "tunnel" || resp.status === "redirect") {
-        setStep(st, "Enlace listo", "done");
-        return { ok: true, url: resp.url, filename: resp.filename, host };
+      const data = await eng.extract(url);
+      if (!data || !Array.isArray(data.formats) || !data.formats.length) {
+        const msg = data?.message || "sin formatos";
+        setStep(st, `Dijo: ${msg}`, "err");
+        errs.push(`${eng.name}: ${msg}`);
+        continue;
       }
-      if (resp.status === "picker") {
-        setStep(st, "Varios elementos", "done");
-        return { ok: true, picker: resp.picker || [], host };
-      }
-      const code = resp.error?.code || "desconocido";
-      setStep(st, `Dijo: ${code}`, "err");
-      errs.push(`${host}: ${code}`);
-      if (code.includes("jwt") || code.includes("auth")) delete sessions[host];
+      setStep(st, "Enlace resuelto", "done");
+      return { ok: true, data, engine: eng.name };
     } catch (e) {
-      if (st) setStep(st, `Fallo: ${e.message}`, "err");
-      errs.push(`${host}: ${e.message}`);
+      setStep(st, `Fallo: ${e.message}`, "err");
+      errs.push(`${eng.name}: ${e.message}`);
     }
   }
   return { ok: false, errs };
+}
+
+/* elige el mejor formato según el modo y la calidad elegida */
+function pickFormat(formats, { mode, vquality }) {
+  const vids = formats.filter((f) => f.type === "video" && f.url);
+  const auds = formats.filter((f) => f.type === "audio" && f.url);
+  const q = (f) => parseInt(f.label, 10) || 0;
+
+  if (mode === "audio") return auds[0] || null;
+  if (!vids.length) return auds[0] || null;   // solo hay audio disponible
+
+  if (vquality === "max") return vids.reduce((a, b) => (q(b) > q(a) ? b : a));
+  const target = parseInt(vquality, 10);
+  const le = vids.filter((f) => q(f) <= target).sort((a, b) => q(b) - q(a))[0];
+  return le || vids.reduce((a, b) => (q(b) < q(a) ? b : a)); // si no hay ≤, la más baja
 }
 
 /* ---------- spotify ---------- */
@@ -268,14 +228,6 @@ async function run() {
 
   try {
     const isSpotify = /open\.spotify\.com|spotify\.link/.test(url);
-    const base = {
-      downloadMode: state.mode,
-      videoQuality: state.vquality,
-      audioFormat: "mp3",
-      audioBitrate: state.abitrate,
-      filenameStyle: "basic",
-      disableMetadata: false,
-    };
 
     if (isSpotify) {
       const st = step("Resolviendo canción(es) de spotify…");
@@ -284,11 +236,12 @@ async function run() {
       let done = 0;
       for (const t of tracks) {
         const s2 = step(`Bajando: ${t.title}…`);
-        const res = await cobaltDownload({ ...base, url: t.youtubeUrl, downloadMode: "audio" }, step);
-        if (res.ok && res.url) {
+        const res = await extract(t.youtubeUrl, step);
+        const pick = res.ok ? pickFormat(res.data.formats, { mode: "audio" }) : null;
+        if (pick) {
           setStep(s2, `Lista: ${t.title}`, "done");
-          showResult(res.url, res.filename || (t.title + ".mp3"));
-          pushHistory(url, res.filename || t.title);
+          showResult(pick.url, `${t.title}.${pick.ext || "mp3"}`);
+          pushHistory(url, `${t.title}.${pick.ext || "mp3"}`);
         } else {
           setStep(s2, `Falló: ${t.title}`, "err");
         }
@@ -297,17 +250,20 @@ async function run() {
       return;
     }
 
-    const res = await cobaltDownload({ ...base, url }, step);
-    if (res.ok && res.url) {
-      showResult(res.url, res.filename);
-      pushHistory(url, res.filename);
-    } else if (res.ok && res.picker) {
-      showPicker(res.picker);
-      pushHistory(url, "Varios elementos");
-    } else {
-      step("Ninguna instancia pudo con este enlace ahora mismo — prueba en un rato u otro link", "err");
+    const res = await extract(url, step);
+    if (!res.ok) {
+      step("No pude con este enlace ahora mismo — prueba en un rato u otro link", "err");
       console.warn(res.errs);
+      return;
     }
+    const pick = pickFormat(res.data.formats, state);
+    if (!pick) {
+      step("No encontré un formato compatible para este enlace", "err");
+      return;
+    }
+    const fname = `${res.data.title || "downly"}.${pick.ext || (pick.type === "audio" ? "mp3" : "mp4")}`;
+    showResult(pick.url, fname);
+    pushHistory(url, fname);
   } catch (e) {
     step("Error: " + e.message, "err");
   } finally {

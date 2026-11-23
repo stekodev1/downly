@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>descargador — mp3 / mp4</title>
+<meta name="description" content="Descarga vídeo y audio de YouTube, Spotify, TikTok, Instagram, Twitch y más. Gratis, sin líos.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⬇️</text></svg>">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main class="wrap">
+
+  <header>
+    <h1>descargador<span class="accent">.</span></h1>
+    <p class="sub">pega un enlace, elige formato, descarga.<br>
+    <span class="services">youtube · spotify · tiktok · instagram · x · twitch · soundcloud · reddit · vimeo y más</span></p>
+  </header>
+
+  <section class="box">
+    <div class="row inputrow">
+      <input id="url" type="url" inputmode="url" autocomplete="off" spellcheck="false"
+             placeholder="https://www.youtube.com/watch?v=…  ó  https://open.spotify.com/track/…">
+      <button id="paste" title="pegar del portapapeles">pegar</button>
+    </div>
+
+    <div class="row opts">
+      <label>
+        formato
+        <select id="mode">
+          <option value="auto">vídeo (mp4)</option>
+          <option value="audio">audio (mp3)</option>
+          <option value="mute">vídeo sin sonido</option>
+        </select>
+      </label>
+      <label id="vqwrap">
+        calidad vídeo
+        <select id="vquality">
+          <option value="max">máxima</option>
+          <option value="1080" selected>1080p</option>
+          <option value="720">720p</option>
+          <option value="480">480p</option>
+          <option value="360">360p</option>
+        </select>
+      </label>
+      <label id="abwrap" class="hidden">
+        bitrate mp3
+        <select id="abitrate">
+          <option value="320">320k</option>
+          <option value="256">256k</option>
+          <option value="128" selected>128k</option>
+        </select>
+      </label>
+      <button id="go" class="primary">descargar</button>
+    </div>
+  </section>
+
+  <div id="status" class="status hidden"></div>
+  <div id="result" class="result hidden"></div>
+  <div id="picker" class="picker hidden"></div>
+
+  <section id="historysec" class="history hidden">
+    <h2>recientes</h2>
+    <ul id="history"></ul>
+  </section>
+
+  <div id="ts" class="ts"></div>
+
+  <footer>
+    <p>motor: instancias públicas de <a href="https://cobalt.tools" target="_blank" rel="noopener">cobalt</a> ·
+    los archivos van directos del servidor a tu navegador · hecho para uso personal</p>
+  </footer>
+
+</main>
+<script src="app.js"></script>
+</body>
+</html>

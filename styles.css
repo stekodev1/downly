@@ -41,9 +41,16 @@ body {
   color: var(--text);
   font-family: var(--font-ui);
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
 }
+
+button, input, a { touch-action: manipulation; }
 
 ::selection { background: rgba(109, 141, 255, 0.30); }
 
@@ -732,20 +739,41 @@ footer {
 /* ---------- responsive ---------- */
 
 @media (max-width: 640px) {
-  .wrap { padding: 18px 14px 70px; }
-  .nav { padding-bottom: 34px; }
-  .hero { margin-bottom: 26px; }
-  .hero h1 { letter-spacing: -1.8px; }
+  .wrap { padding: 16px 14px calc(60px + env(safe-area-inset-bottom)); }
+  .nav { padding-bottom: 30px; }
+  .brand { font-size: 17px; }
+  .hero { margin-bottom: 22px; }
+  .hero h1 { letter-spacing: -1.8px; font-size: clamp(34px, 10.5vw, 46px); }
+  .sub { font-size: 14.5px; margin-top: 13px; }
+  .svcs { margin-top: 20px; }
+  .svc { font-size: 12px; }
+  .svc::after { margin: 0 11px; }
+  .tool { padding: 8px; border-radius: 18px; }
   .inputwrap { flex-wrap: wrap; }
   .ilink { margin-left: 10px; }
-  #url { flex-basis: calc(100% - 36px); }
-  button.ghost { order: 2; }
-  button.primary { order: 3; flex: 1; justify-content: center; }
-  .controls { flex-direction: column; align-items: stretch; }
+  #url { flex-basis: calc(100% - 36px); padding: 15px 4px; font-size: 16px; }
+  button.ghost { order: 2; padding: 13px 16px; }
+  button.primary { order: 3; flex: 1; justify-content: center; padding: 15px 20px; font-size: 15.5px; }
+  .controls { flex-direction: column; align-items: stretch; gap: 12px; padding: 10px 2px 2px; }
   .seg { justify-content: stretch; }
-  .segbtn { flex: 1; justify-content: center; padding: 10px 8px; }
-  .quals { justify-content: center; }
-  .features { grid-template-columns: 1fr; gap: 10px; }
+  .segbtn { flex: 1; justify-content: center; padding: 12px 6px; font-size: 13px; }
+  .quals { justify-content: flex-start; gap: 7px; }
+  .qbtn { padding: 9px 14px; font-size: 13px; }
+  .qlabel { flex-basis: 100%; margin: 0 0 2px 4px; }
+  .status { font-size: 13px; padding: 14px 15px; }
+  .result { padding: 18px; }
+  .result a.dl { width: 100%; justify-content: center; padding: 15px 20px; }
+  .features { grid-template-columns: 1fr; gap: 10px; margin-top: 40px; }
+  footer { margin-top: 48px; }
+}
+
+/* en pantallas táctiles no hay hover — evita estados "pegados" tras el tap */
+@media (hover: none) {
+  .tool:hover::after, .feat:hover::after { opacity: 0; }
+  .feat:hover, .feat.in:hover { transform: none; border-color: var(--line); background: var(--card); }
+  button.primary:hover { transform: none; filter: none; }
+  .qbtn:hover, .segbtn:hover, button.ghost:hover { color: var(--muted); border-color: var(--line); background: transparent; }
+  .svcs:hover .svcs-track { animation-play-state: running; }
 }
 
 @media (prefers-reduced-motion: reduce) {

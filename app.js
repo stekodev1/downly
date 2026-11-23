@@ -116,7 +116,11 @@ function showResult(url, filename) {
   a.rel = "noopener";
   const note = document.createElement("div");
   note.className = "note";
-  note.textContent = "Si no empieza solo, mantén pulsado el botón → «guardar enlace»";
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  note.textContent = isIOS
+    ? "En iPhone: mantén pulsado «Guardar archivo» → Descargar vídeo / Guardar en Archivos"
+    : "Si no empieza solo, mantén pulsado el botón → «guardar enlace»";
   r.append(f, a, note);
   a.click();
 }
@@ -341,32 +345,37 @@ document.querySelectorAll("#quals-audio .qbtn").forEach((b) => {
   });
 });
 
-/* spotlight que sigue al cursor en tarjetas */
-document.querySelectorAll(".tool, .feat").forEach((el) => {
-  el.addEventListener("pointermove", (e) => {
-    const r = el.getBoundingClientRect();
-    el.style.setProperty("--mx", `${e.clientX - r.left}px`);
-    el.style.setProperty("--my", `${e.clientY - r.top}px`);
+/* efectos de puntero — solo con ratón real (ahorro en táctil) */
+const finePointer = matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+if (finePointer) {
+  /* spotlight que sigue al cursor en tarjetas */
+  document.querySelectorAll(".tool, .feat").forEach((el) => {
+    el.addEventListener("pointermove", (e) => {
+      const r = el.getBoundingClientRect();
+      el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+      el.style.setProperty("--my", `${e.clientY - r.top}px`);
+    });
   });
-});
 
-/* botón magnético */
-const goBtn = $("go");
-goBtn.addEventListener("pointermove", (e) => {
-  const r = goBtn.getBoundingClientRect();
-  const dx = e.clientX - (r.left + r.width / 2);
-  const dy = e.clientY - (r.top + r.height / 2);
-  goBtn.style.transform = `translate(${dx * 0.16}px, ${dy * 0.26}px)`;
-});
-goBtn.addEventListener("pointerleave", () => { goBtn.style.transform = ""; });
+  /* botón magnético */
+  const goBtn = $("go");
+  goBtn.addEventListener("pointermove", (e) => {
+    const r = goBtn.getBoundingClientRect();
+    const dx = e.clientX - (r.left + r.width / 2);
+    const dy = e.clientY - (r.top + r.height / 2);
+    goBtn.style.transform = `translate(${dx * 0.16}px, ${dy * 0.26}px)`;
+  });
+  goBtn.addEventListener("pointerleave", () => { goBtn.style.transform = ""; });
 
-/* parallax sutil del fondo */
-const bgEl = document.querySelector(".bg");
-addEventListener("pointermove", (e) => {
-  const x = (e.clientX / innerWidth - 0.5) * 26;
-  const y = (e.clientY / innerHeight - 0.5) * 20;
-  bgEl.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-}, { passive: true });
+  /* parallax sutil del fondo */
+  const bgEl = document.querySelector(".bg");
+  addEventListener("pointermove", (e) => {
+    const x = (e.clientX / innerWidth - 0.5) * 26;
+    const y = (e.clientY / innerHeight - 0.5) * 20;
+    bgEl.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+  }, { passive: true });
+}
 
 /* placeholder rotativo */
 const PH = ["Pega un link de YouTube…", "Pega un link de Spotify…", "Pega un link de TikTok…",

@@ -384,6 +384,7 @@ button.primary svg { width: 17px; height: 17px; }
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+  flex-basis: 100%;
 }
 .qlabel {
   font-size: 10.5px;

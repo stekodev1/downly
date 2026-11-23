@@ -177,36 +177,23 @@ async function extract(url, log) {
 }
 
 /* estrategia de descarga:
-   - proxy /api/dl (mismo dominio, nombre con marca) cuando el archivo
-     cabe en la función — upstream ~25KB/s y hay límite de duración
-   - enlace directo para archivos grandes/desconocidos: dl.gendownload
-     envía attachment nativo → descarga sin salir de la página */
-const PROXY_LIMIT = 12 * 1024 * 1024; // ~12MB: holgado bajo el timeout
-
-/* filesize de gendownload no es fiable — estima por duración × bitrate */
-function estSize(pick, durSec) {
-  const q = parseInt(pick.label, 10) || 0;
-  const rate = pick.type === "audio" ? 20 : q >= 2160 ? 1200 : q >= 1080 ? 350 : q >= 720 ? 200 : 100;
-  if (durSec) return durSec * rate * 1024;
-  const fs = pick.filesize || 0;
-  return fs > 0 && fs <= PROXY_LIMIT ? fs : 0;
-}
-
-function dlRoute(pick, fname, sizeEst) {
+   - gendownload (upstream ~25KB/s capado): enlace directo — su servidor
+     envía attachment nativo, el navegador lo gestiona sin límite de
+     tiempo y con reanudación. el proxy se queda como alternativa.
+   - tikwm / twimg (CDN rápidos): siempre proxy — marca + attachment. */
+function dlRoute(pick, fname) {
   const proxy = `/api/dl?u=${encodeURIComponent(pick.url)}&f=${encodeURIComponent(fname)}`;
   let host = "";
   try { host = new URL(pick.url).hostname; } catch {}
-  const slowUp = /(^|\.)gendownload\.com$/i.test(host); // upstream capado
-  const viaProxy = !slowUp || (sizeEst > 0 && sizeEst <= PROXY_LIMIT);
-  return {
-    main: viaProxy ? proxy : pick.url,
-    alt: viaProxy ? pick.url : proxy, // ruta alternativa para el botón
-  };
+  const slowUp = /(^|\.)gendownload\.com$/i.test(host);
+  return slowUp
+    ? { main: pick.url, alt: proxy }
+    : { main: proxy, alt: pick.url };
 }
 
-async function deliver(pick, fname, sizeEst) {
+async function deliver(pick, fname) {
   const s3 = step("Descargando archivo…");
-  const { main, alt } = dlRoute(pick, fname, sizeEst);
+  const { main, alt } = dlRoute(pick, fname);
   const a = document.createElement("a");
   a.href = main;
   a.download = fname;
@@ -272,7 +259,7 @@ async function run() {
         if (pick) {
           setStep(s2, `Lista: ${t.title}`, "done");
           const fn = brandName(t.title, pick.ext || "mp3");
-          await deliver(pick, fn, estSize(pick, res.data.duration));
+          await deliver(pick, fn);
           pushHistory(url, fn);
         } else {
           setStep(s2, `Falló: ${t.title}`, "err");
@@ -294,7 +281,7 @@ async function run() {
       return;
     }
     const fname = brandName(res.data.title, pick.ext || (pick.type === "audio" ? "mp3" : "mp4"));
-    await deliver(pick, fname, estSize(pick, res.data.duration));
+    await deliver(pick, fname);
     pushHistory(url, fname);
   } catch (e) {
     step("Error: " + e.message, "err");

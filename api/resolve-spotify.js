@@ -126,6 +126,6 @@ module.exports = async function handler(req, res) {
     if (!tracks.length) return res.status(404).json({ error: "no encontré la canción en youtube" });
     res.json({ tracks });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: "error interno" });
   }
 };

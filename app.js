@@ -97,9 +97,10 @@ function setStep(el, text, state) {
   el.className = "step " + state;
   el.textContent = text;
 }
-function clearResult() { $("result").classList.add("hidden"); $("picker").classList.add("hidden"); }
+function clearResult() { $("result").classList.add("hidden"); }
 
 function showResult(url, filename) {
+  if (!/^https:\/\//.test(url) && !url.startsWith("blob:")) return; // solo urls seguras
   const r = $("result");
   r.classList.remove("hidden");
   r.innerHTML = '<div class="rcheck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>';
@@ -120,45 +121,20 @@ function showResult(url, filename) {
   a.click();
 }
 
-function showPicker(items) {
-  const p = $("picker");
-  p.classList.remove("hidden");
-  p.innerHTML = "<h3>Varios elementos en el enlace — Elige cuál bajar:</h3>";
-  items.forEach((it, i) => {
-    const row = document.createElement("div");
-    row.className = "item";
-    const n = document.createElement("span");
-    n.className = "n";
-    n.textContent = i + 1;
-    const t = document.createElement("span");
-    t.textContent = it.type === "photo" ? "Imagen" : "Vídeo / audio";
-    const a = document.createElement("a");
-    a.href = it.url;
-    a.target = "_blank";
-    a.rel = "noopener";
-    a.textContent = "Descargar ↗";
-    row.append(n, t, a);
-    p.appendChild(row);
-  });
-}
+/* ---------- historial (solo en memoria — no se guarda nada) ---------- */
 
-/* ---------- historial ---------- */
-
+const historyItems = [];
 function pushHistory(url, filename) {
-  try {
-    const h = JSON.parse(localStorage.getItem("dl_history") || "[]");
-    h.unshift({ url, filename, t: Date.now() });
-    localStorage.setItem("dl_history", JSON.stringify(h.slice(0, 15)));
-    renderHistory();
-  } catch (e) {}
+  historyItems.unshift({ url, filename, t: Date.now() });
+  historyItems.length = Math.min(historyItems.length, 15);
+  renderHistory();
 }
 function renderHistory() {
-  const h = JSON.parse(localStorage.getItem("dl_history") || "[]");
   const sec = $("historysec"), ul = $("history");
-  if (!h.length) { sec.classList.add("hidden"); return; }
+  if (!historyItems.length) { sec.classList.add("hidden"); return; }
   sec.classList.remove("hidden");
   ul.innerHTML = "";
-  h.forEach((x) => {
+  historyItems.forEach((x) => {
     const li = document.createElement("li");
     li.textContent = x.filename || x.url;
     ul.appendChild(li);

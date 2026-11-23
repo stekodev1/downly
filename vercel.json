@@ -5,6 +5,9 @@
   "functions": {
     "api/resolve-spotify.js": {
       "maxDuration": 30
+    },
+    "api/dl.js": {
+      "maxDuration": 300
     }
   },
   "headers": [
@@ -21,7 +24,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://gendownload.com https://dl.gendownload.com https://www.tikwm.com https://api.fxtwitter.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://gendownload.com https://www.tikwm.com https://api.fxtwitter.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
         }
       ]
     }

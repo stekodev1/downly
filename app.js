@@ -100,7 +100,7 @@ function setStep(el, text, state) {
 function clearResult() { $("result").classList.add("hidden"); }
 
 function showResult(url, filename) {
-  if (!/^https:\/\//.test(url) && !url.startsWith("blob:")) return; // solo urls seguras
+  if (!/^(https:\/\/|blob:|\/api\/)/.test(url)) return; // solo urls seguras
   const r = $("result");
   r.classList.remove("hidden");
   r.innerHTML = '<div class="rcheck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>';
@@ -112,8 +112,7 @@ function showResult(url, filename) {
   a.href = url;
   a.innerHTML = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></svg> Guardar archivo';
   a.setAttribute("download", filename || "");
-  a.target = "_blank";
-  a.rel = "noopener";
+  if (/^https:/.test(url)) { a.target = "_blank"; a.rel = "noopener"; }
   const note = document.createElement("div");
   note.className = "note";
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
@@ -170,48 +169,19 @@ async function extract(url, log) {
   return { ok: false, errs };
 }
 
-/* descarga el archivo a un blob (con progreso real) para que el
-   guardado sea automático y el nombre de archivo respetado */
-async function fetchBlob(url, onProgress) {
-  const r = await fetch(url);
-  if (!r.ok || !r.body) throw new Error("descarga http " + r.status);
-  const total = +r.headers.get("content-length") || 0;
-  const reader = r.body.getReader();
-  const chunks = [];
-  let got = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    got += value.length;
-    onProgress(total ? got / total : 0, got);
-  }
-  return new Blob(chunks, { type: r.headers.get("content-type") || "application/octet-stream" });
-}
-
+/* la descarga pasa por /api/dl (mismo dominio): Content-Disposition
+   attachment fuerza el guardado — el navegador nunca navega fuera */
 async function deliver(pick, fname) {
   const s3 = step("Descargando archivo…");
-  const pbar = document.createElement("div");
-  pbar.className = "pbar";
-  pbar.innerHTML = "<i></i>";
-  $("status").appendChild(pbar);
-  try {
-    const blob = await fetchBlob(pick.url, (p) => {
-      if (p > 0) {
-        pbar.firstElementChild.style.width = Math.round(p * 100) + "%";
-        s3.lastElementChild.textContent = `Descargando archivo… ${Math.round(p * 100)}%`;
-      }
-    });
-    setStep(s3, "Descarga completada", "done");
-    pbar.remove();
-    const obj = URL.createObjectURL(blob);
-    showResult(obj, fname);
-    setTimeout(() => URL.revokeObjectURL(obj), 60000);
-  } catch (e) {
-    setStep(s3, "Descarga directa — usa el botón", "done");
-    pbar.remove();
-    showResult(pick.url, fname);
-  }
+  const u = `/api/dl?u=${encodeURIComponent(pick.url)}&f=${encodeURIComponent(fname)}`;
+  const a = document.createElement("a");
+  a.href = u;
+  a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setStep(s3, "Descarga completada", "done");
+  showResult(u, fname);
 }
 
 /* elige el mejor formato según el modo y la calidad elegida */

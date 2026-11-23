@@ -354,4 +354,13 @@ document.querySelectorAll("#quals-audio .qbtn").forEach((b) => {
   });
 });
 
+/* spotlight que sigue al cursor en tarjetas */
+document.querySelectorAll(".tool, .feat").forEach((el) => {
+  el.addEventListener("pointermove", (e) => {
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+    el.style.setProperty("--my", `${e.clientY - r.top}px`);
+  });
+});
+
 renderHistory();

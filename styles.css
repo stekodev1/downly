@@ -28,6 +28,7 @@
   --r-sm: 9px;
   --font-ui: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", "Inter", ui-sans-serif, sans-serif;
+  --font-serif: "Instrument Serif", Georgia, serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -147,17 +148,18 @@ body {
 .eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.4px;
+  gap: 9px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
   color: var(--muted);
   border: 1px solid var(--line);
   background: var(--card);
   backdrop-filter: blur(8px);
   border-radius: 999px;
-  padding: 6px 14px;
-  margin-bottom: 22px;
+  padding: 7px 16px;
+  margin-bottom: 24px;
 }
 .edot {
   width: 6px; height: 6px;
@@ -179,7 +181,12 @@ body {
   line-height: 1.03;
 }
 .hero h1 em {
-  font-style: normal;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.12em;
+  letter-spacing: -0.015em;
+  padding-right: 0.08em;
   background: linear-gradient(110deg, var(--a1) 10%, var(--a2) 55%, var(--a1) 100%);
   background-size: 220% 100%;
   -webkit-background-clip: text;
@@ -236,7 +243,19 @@ body {
     inset 0 1px 0 rgba(255,255,255,0.05);
   animation: rise 0.6s var(--ease) 0.12s both;
   transition: box-shadow 0.3s ease;
+  overflow: hidden;
 }
+.tool::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(340px circle at var(--mx, 50%) var(--my, 50%), rgba(109, 141, 255, 0.11), transparent 65%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+.tool:hover::after { opacity: 1; }
 .tool:focus-within {
   box-shadow:
     0 24px 70px -16px rgba(0,0,0,0.75),
@@ -263,8 +282,8 @@ body {
   border: none;
   outline: none;
   color: var(--text);
-  font-size: 16px;
-  padding: 16px 4px;
+  font-size: 16.5px;
+  padding: 17px 4px;
   font-family: var(--font-ui);
 }
 #url::placeholder { color: var(--faint); }
@@ -563,20 +582,47 @@ button.primary svg { width: 17px; height: 17px; }
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   margin-top: 52px;
+  counter-reset: feat;
   animation: rise 0.6s var(--ease) 0.18s both;
 }
 .feat {
+  position: relative;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   padding: 20px 18px;
+  overflow: hidden;
   transition: border-color 0.25s, transform 0.25s var(--ease), background 0.25s;
+}
+.feat::before {
+  counter-increment: feat;
+  content: counter(feat, decimal-leading-zero);
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--faint);
+  z-index: 1;
+}
+.feat::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(109, 141, 255, 0.10), transparent 65%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
 }
 .feat:hover {
   border-color: var(--line-hi);
   background: var(--card-hi);
   transform: translateY(-3px);
 }
+.feat:hover::after { opacity: 1; }
 .ficon {
   width: 34px; height: 34px;
   display: grid; place-items: center;

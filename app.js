@@ -180,7 +180,7 @@ async function extract(url, log) {
         errs.push(`${eng.name}: ${msg}`);
         continue;
       }
-      setStep(st, "Enlace resuelto", "done");
+      setStep(st, "Enlace listo", "done");
       return { ok: true, data, engine: eng.name };
     } catch (e) {
       setStep(st, `Fallo: ${e.message}`, "err");
@@ -222,7 +222,7 @@ async function deliver(pick, fname) {
         s3.lastElementChild.textContent = `Descargando archivo… ${Math.round(p * 100)}%`;
       }
     });
-    setStep(s3, "Archivo descargado", "done");
+    setStep(s3, "Descarga completada", "done");
     pbar.remove();
     const obj = URL.createObjectURL(blob);
     showResult(obj, fname);

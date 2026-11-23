@@ -258,20 +258,33 @@ body {
 
 /* ---------- tarjeta herramienta ---------- */
 
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
 .tool {
   position: relative;
   background:
     linear-gradient(var(--solid), var(--solid)) padding-box,
-    linear-gradient(150deg, rgba(255,255,255,0.16), rgba(255,255,255,0.03) 30%, rgba(109,141,255,0.25) 90%) border-box;
+    conic-gradient(from var(--angle) at 50% 50%,
+      rgba(255,255,255,0.10) 0deg,
+      rgba(109,141,255,0.55) 70deg,
+      rgba(177,109,255,0.55) 130deg,
+      rgba(255,255,255,0.10) 180deg,
+      rgba(255,255,255,0.10) 360deg) border-box;
   border: 1px solid transparent;
   border-radius: var(--r-xl);
   padding: 10px;
   box-shadow:
     0 24px 60px -18px rgba(0,0,0,0.7),
     inset 0 1px 0 rgba(255,255,255,0.05);
-  animation: rise 0.6s var(--ease) 0.12s both;
+  animation: rise 0.6s var(--ease) 0.12s both, border-spin 4.5s linear 0.8s infinite;
   transition: box-shadow 0.3s ease;
   overflow: hidden;
+}
+@keyframes border-spin {
+  to { --angle: 360deg; }
 }
 .tool::after {
   content: "";

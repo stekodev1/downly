@@ -41,6 +41,10 @@ const ENGINES = [
 const $ = (id) => document.getElementById(id);
 let busy = false;
 
+/* nombres de archivo con marca */
+const brandName = (t, ext) =>
+  `${(t || "downly").replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ").trim().slice(0, 80)} - getdownly.vercel.app.${ext}`;
+
 /* estado de selección */
 const state = { mode: "auto", vquality: "max", abitrate: "128" };
 
@@ -240,8 +244,9 @@ async function run() {
         const pick = res.ok ? pickFormat(res.data.formats, { mode: "audio" }) : null;
         if (pick) {
           setStep(s2, `Lista: ${t.title}`, "done");
-          showResult(pick.url, `${t.title}.${pick.ext || "mp3"}`);
-          pushHistory(url, `${t.title}.${pick.ext || "mp3"}`);
+          const fn = brandName(t.title, pick.ext || "mp3");
+          showResult(pick.url, fn);
+          pushHistory(url, fn);
         } else {
           setStep(s2, `Falló: ${t.title}`, "err");
         }
@@ -261,7 +266,7 @@ async function run() {
       step("No encontré un formato compatible para este enlace", "err");
       return;
     }
-    const fname = `${res.data.title || "downly"}.${pick.ext || (pick.type === "audio" ? "mp3" : "mp4")}`;
+    const fname = brandName(res.data.title, pick.ext || (pick.type === "audio" ? "mp3" : "mp4"));
     showResult(pick.url, fname);
     pushHistory(url, fname);
   } catch (e) {

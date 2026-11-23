@@ -1,4 +1,4 @@
-/* descargador — motor cliente.
+/* downly — motor cliente.
    Todo el trabajo pesado lo hacen instancias públicas de cobalt;
    la página solo orquesta: turnstile -> jwt -> post / -> url de descarga. */
 
